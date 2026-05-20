@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة ديون المكتبة الإلكتروني</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #2980b9;
+            --success-color: #27ae60;
+            --danger-color: #c0392b;
+            --bg-color: #f5f6fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .edit-mode-toggle {
+            position: absolute;
+            top: 25px;
+            left: 20px;
+            width: auto;
+            padding: 8px 15px;
+            background-color: #e67e22;
+            color: white;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .edit-mode-toggle.active {
+            background-color: var(--danger-color);
+        }
+
+        @media (max-width: 768px) {
+            header { padding-top: 60px; }
+            .edit-mode-toggle { top: 10px; left: 10px; width: calc(100% - 20px); }
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-primary:hover { background-color: #1f6391; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: #1e8449; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #922b21; }
+
+        .search-box {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        /* تنسيق أزرار فلترة الزبائن الجديدة */
+        .filter-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .filter-btn {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 13px;
+            background-color: #e2e8f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+            width: auto;
+        }
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .customer-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .customer-item {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .customer-item:hover {
+            background-color: #edf2f7;
+        }
+
+        .customer-item.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .customer-debt {
+            font-weight: bold;
+        }
+
+        .debt-positive { color: var(--danger-color); }
+        .debt-zero { color: var(--success-color); }
+        .active .debt-positive, .active .debt-zero { color: white; }
+
+        .dashboard-placeholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background-color: #e2e8f0;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .action-pane {
+            display: none;
+        }
+
+        .action-pane.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: right;
+        }
+
+        table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        .customer-header-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-edit-action {
+            padding: 5px 10px;
+            font-size: 13px;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: auto;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-danger btn-delete-action {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .validation-error {
+            color: var(--danger-color);
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>نظام إدارة ديون المكتبة الإلكتروني</h1>
+        <p>بديل الدفتر الورقي - نسخة تجريبية محلية</p>
+        <button id="toggleEditModeBtn" class="edit-mode-toggle" onclick="toggleEditMode()">دخول وضع التعديل</button>
+    </header>
+
+    <div class="main-layout">
+        <!-- القائمة الجانبية -->
+        <div class="sidebar">
+            <div class="card">
+                <h3>إضافة زبون جديد</h3>
+                <div class="form-group">
+                    <label>اسم الزبون:</label>
+                    <input type="text" id="custName" placeholder="أدخل اسم الزبون الكامل">
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف (اختياري):</label>
+                    <input type="text" id="custPhone" placeholder="أدخل رقم الهاتف">
+                </div>
+                <button class="btn-primary" onclick="addCustomer()">إضافة للدفتر</button>
+            </div>
+
+            <div class="card">
+                <h3>قائمة الزبائن</h3>
+                <input type="text" id="searchCust" class="search-box" placeholder="بحث عن زبون..." oninput="renderCustomers()">
+                
+                <!-- أزرار التصفية الجديدة المعتمدة -->
+                <div class="filter-group">
+                    <button class="filter-btn active" onclick="setCustomerFilter('all', this)">الكل</button>
+                    <button class="filter-btn" onclick="setCustomerFilter('debtors', this)">المطلوبين</button>
+                    <button class="filter-btn" onclick="setCustomerFilter('settled', this)">المسددين</button>
+                </div>
+
+                <div class="customer-list" id="customerList">
+                    <!-- يظهر الزبائن هنا برمجياً -->
+                </div>
+            </div>
+        </div>
+
+        <!-- الواجهة الرئيسية -->
+        <div class="main-content">
+            <div class="card" id="mainCard" style="min-height: 600px;">
+                <div id="placeholder" class="dashboard-placeholder">
+                    <p>يرجى اختيار زبون من القائمة الجانبية لعرض وتعديل حساباته.</p>
+                </div>
+
+                <div id="detailsContainer" style="display: none;">
+                    <div class="customer-header-details">
+                        <div>
+                            <h2 id="currentCustName" style="color: var(--primary-color);">---</h2>
+                            <p id="currentCustPhone" style="color: #666; font-size: 14px;">الهاتف: ---</p>
+                        </div>
+                        <div style="text-align: left;">
+                            <span style="font-size: 14px; color: #555;">الحساب الحالي المتبقي:</span>
+                            <h2 id="currentCustBalance" class="debt-positive">0 دينار</h2>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('debtTab', this)">تسجيل دين جديد</button>
+                        <button class="tab-btn" onclick="switchTab('payTab', this)">تسجيل تسديد نقدي</button>
+                    </div>
+
+                    <!-- تسجيل دين جديد -->
+                    <div id="debtTab" class="action-pane active">
+                        <div class="form-group">
+                            <label>تفاصيل المواد المبيوعة (مثل: طباعة ملازم كيمياء، قرطاسية...):</label>
+                            <textarea id="debtDesc" rows="3" placeholder="اكتب تفاصيل ما سحبه الزبون بدقة..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>المبلغ المضاف للاتفاق (دينار عراقي):</label>
+                            <input type="number" id="debtAmount" placeholder="0">
+                        </div>
+                        <button class="btn-danger" onclick="submitTransaction('دين')">قيد الدين في الحساب</button>
+                    </div>
+
+                    <!-- تسجيل تسديد -->
+                    <div id="payTab" class="action-pane">
+                        <div class="form-group">
+                            <label>المبلغ المدفوع نقدًا (دينار عراقي):</label>
+                            <input type="number" id="payAmount" placeholder="0">
+                            <div id="payError" class="validation-error">خطأ: لا يمكن تسديد مبلغ أكبر من الدين الحالي للزبون!</div>
+                        </div>
+                        <button class="btn-success" onclick="submitTransaction('تسديد')">تأكيد استلام المبلغ</button>
+                    </div>
+
+                    <hr style="margin: 25px 0; border: 0; border-top: 2px dashed #ddd;">
+
+                    <h3>سجل الحركات المالي (كشف الحساب المستمر)</h3>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>نوع الحركة</th>
+                                    <th>التفاصيل / البيان</th>
+                                    <th>المبلغ (دينار)</th>
+                                    <th id="editHeader" style="display: none; text-align: center;">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <!-- تظهر العمليات هنا برمجياً -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 1. نافذة تأكيد الدخول لوضع التعديل -->
+<div id="confirmEditModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom: 15px; color: #e67e22;">تأكيد دخول وضع التعديل</h3>
+        <p style="margin-bottom: 20px; font-size: 15px; color: #555;">هل تريد تفعيل وضع التعديل العام على الفواتير والحركات المالية؟</p>
+        <div class="modal-actions">
+            <button class="btn-success" onclick="executeToggleEditMode()">نعم، دخول</button>
+            <button class="btn-primary" style="background-color: #7f8c8d;" onclick="closeConfirmModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. واجهة التعديل المنبثقة الكاملة للبيانات -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-bottom: 20px; color: var(--primary-color);">تعديل بيانات الحركة المالية</h3>
+        <input type="hidden" id="editTxId">
+        
+        <div class="form-group">
+            <label>التاريخ والوقت:</label>
+            <input type="text" id="editTxDate">
+        </div>
+        <div class="form-group">
+            <label>التفاصيل / السلعة:</label>
+            <textarea id="editTxDesc" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>المبلغ (دينار عراقي):</label>
+            <input type="number" id="editTxAmount">
+            <div id="modalError" class="validation-error">خطأ: التعديل يجعل ميزان الحساب التراكمي بالسالب! تحقق من المبالغ الكلية.</div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn-success" onclick="saveEditedTransaction()">حفظ التعديلات</button>
+            <button class="btn-primary" style="background-color: #7f8c8d;" onclick="closeModal()">إلغاء وتراجع</button>
+        </div>
+        
+        <hr style="margin: 15px 0; border:0; border-top: 1px solid #eee;">
+        <button class="btn-danger" style="padding:10px; border-radius:4px; font-weight:bold; margin-top:10px;" onclick="openDeleteConfirmModal()">حذف هذه الحركة نهائياً 🗑️</button>
+    </div>
+</div>
+
+<!-- 3. نافذة تأكيد الحذف المخصصة المستقرة -->
+<div id="deleteConfirmModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom: 15px; color: var(--danger-color);">تحذير: تأكيد الحذف النهائي</h3>
+        <p style="margin-bottom: 20px; font-size: 15px; color: #333; font-weight: bold;">هل أنت متأكد من حذف هذه الحركة المالية نهائياً من الحساب؟</p>
+        <p style="margin-bottom: 20px; font-size: 13px; color: #7f8c8d;">سيقوم النظام تلقائياً بإعادة احتساب الدين الحالي وتعديله فوراً.</p>
+        <div class="modal-actions">
+            <button class="btn-danger" onclick="executeDeleteTransaction()">نعم، احذف الفاتورة</button>
+            <button class="btn-primary" style="background-color: #7f8c8d;" onclick="closeDeleteConfirmModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let customers = JSON.parse(localStorage.getItem('library_debts_customers')) || [];
+    let selectedCustomerId = null;
+    let isEditMode = false;
+    let currentFilter = 'all'; // متغير تتبع الفلتر النشط حالياً
+
+    function saveToStorage() {
+        localStorage.setItem('library_debts_customers', JSON.stringify(customers));
+    }
+
+    // إدارة وضع التعديل الرئيسي والنافذة المنبثقة المرتبطة به للزر العلوي
+    function toggleEditMode() {
+        if (!isEditMode) {
+            document.getElementById('confirmEditModal').style.display = 'flex';
+        } else {
+            isEditMode = false;
+            applyEditModeUI();
+        }
+    }
+
+    function executeToggleEditMode() {
+        isEditMode = true;
+        closeConfirmModal();
+        applyEditModeUI();
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmEditModal').style.display = 'none';
+    }
+
+    function applyEditModeUI() {
+        const btn = document.getElementById('toggleEditModeBtn');
+        if (isEditMode) {
+            btn.innerText = "خروج من وضع التعديل";
+            btn.classList.add('active');
+        } else {
+            btn.innerText = "دخول وضع التعديل";
+            btn.classList.remove('active');
+        }
+        if (selectedCustomerId) {
+            const cust = customers.find(c => c.id === selectedCustomerId);
+            renderTransactions(cust.transactions);
+        }
+    }
+
+    function addCustomer() {
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+
+        if (!name) {
+            alert('يرجى إدخال اسم الزبون أولاً.');
+            return;
+        }
+
+        const newCustomer = {
+            id: Date.now().toString(),
+            name: name,
+            phone: phone || 'غير محدد',
+            balance: 0,
+            transactions: []
+        };
+
+        customers.push(newCustomer);
+        saveToStorage();
+        renderCustomers();
+
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+    }
+
+    // دالة تغيير الفلتر النشط وإعادة بناء القائمة
+    function setCustomerFilter(filterType, element) {
+        currentFilter = filterType;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        element.classList.add('active');
+        renderCustomers();
+    }
+
+    // تحديث دالة عرض الزبائن لتشمل الفلترة المعتمدة
+    function renderCustomers() {
+        const listContainer = document.getElementById('customerList');
+        const searchTxt = document.getElementById('searchCust').value.toLowerCase();
+        listContainer.innerHTML = '';
+
+        // أولاً: تصفية مبدئية حسب نص البحث المكتوب
+        let filtered = customers.filter(c => c.name.toLowerCase().includes(searchTxt));
+
+        // ثانياً: تصفية إضافية حسب حالة الفلتر المحددة
+        if (currentFilter === 'debtors') {
+            filtered = filtered.filter(c => c.balance > 0);
+        } else if (currentFilter === 'settled') {
+            filtered = filtered.filter(c => c.balance === 0);
+        }
+
+        filtered.forEach(cust => {
+            const item = document.createElement('div');
+            item.className = `customer-item ${selectedCustomerId === cust.id ? 'active' : ''}`;
+            item.onclick = () => selectCustomer(cust.id);
+
+            const debtClass = cust.balance > 0 ? 'debt-positive' : 'debt-zero';
+
+            item.innerHTML = `
+                <div>
+                    <strong style="display:block;">${cust.name}</strong>
+                    <span style="font-size:12px; opacity:0.8;">${cust.phone}</span>
+                </div>
+                <div class="customer-debt ${debtClass}">
+                    ${cust.balance.toLocaleString()} د.ع
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    function selectCustomer(id) {
+        selectedCustomerId = id;
+        renderCustomers();
+
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('detailsContainer').style.display = 'block';
+
+        const cust = customers.find(c => c.id === id);
+        
+        document.getElementById('currentCustName').innerText = cust.name;
+        document.getElementById('currentCustPhone').innerText = `الهاتف: ${cust.phone}`;
+        
+        updateBalanceUI(cust.balance);
+
+        document.getElementById('debtDesc').value = '';
+        document.getElementById('debtAmount').value = '';
+        document.getElementById('payAmount').value = '';
+        document.getElementById('payError').style.display = 'none';
+
+        renderTransactions(cust.transactions);
+    }
+
+    function updateBalanceUI(balance) {
+        const balEl = document.getElementById('currentCustBalance');
+        balEl.innerText = `${balance.toLocaleString()} دينار`;
+        if(balance > 0) {
+            balEl.className = 'debt-positive';
+        } else {
+            balEl.className = 'debt-zero';
+        }
+    }
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.action-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+        document.getElementById('payError').style.display = 'none';
+    }
+
+    function submitTransaction(type) {
+        if (!selectedCustomerId) return;
+        const cust = customers.find(c => c.id === selectedCustomerId);
+
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+        if (type === 'دين') {
+            const desc = document.getElementById('debtDesc').value.trim();
+            const amount = parseInt(document.getElementById('debtAmount').value);
+
+            if (!desc || isNaN(amount) || amount <= 0) {
+                alert('يرجى كتابة التفاصيل وإدخال مبلغ صحيح.');
+                return;
+            }
+
+            cust.balance += amount;
+            cust.transactions.unshift({
+                id: Date.now().toString(),
+                date: dateStr,
+                type: 'دين جديد',
+                desc: desc,
+                amount: amount
+            });
+
+        } else if (type === 'تسديد') {
+            const amount = parseInt(document.getElementById('payAmount').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('يرجى إدخال مبلغ تسديد صحيح.');
+                return;
+            }
+
+            if (amount > cust.balance) {
+                document.getElementById('payError').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('payError').style.display = 'none';
+            cust.balance -= amount;
+            cust.transactions.unshift({
+                id: Date.now().toString(),
+                date: dateStr,
+                type: 'تسديد نقدى',
+                desc: 'تم استلام المبلغ نقدًا من الزبون',
+                amount: amount
+            });
+        }
+
+        saveToStorage();
+        selectCustomer(selectedCustomerId);
+    }
+
+    function renderTransactions(transactions) {
+        const tbody = document.getElementById('transactionsTableBody');
+        const editHeader = document.getElementById('editHeader');
+        tbody.innerHTML = '';
+
+        if (isEditMode) {
+            editHeader.style.display = 'table-cell';
+        } else {
+            editHeader.style.display = 'none';
+        }
+
+        if(transactions.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${isEditMode ? 5 : 4}" style="text-align:center; color:#999;">لا توجد حركات مسجلة لهذا الزبون سابقاً.</td></tr>`;
+            return;
+        }
+
+        transactions.forEach(t => {
+            const tr = document.createElement('tr');
+            
+            let typeStyle = '';
+            if(t.type === 'دين جديد') typeStyle = 'color: var(--danger-color); font-weight:bold;';
+            if(t.type === 'تسديد نقدى') typeStyle = 'color: var(--success-color); font-weight:bold;';
+
+            let idStr = t.id.toString();
+
+            tr.innerHTML = `
+                <td style="font-size:13px; color:#555;">${t.date}</td>
+                <td style="${typeStyle}">${t.type}</td>
+                <td>${t.desc}</td>
+                <td style="font-weight:bold;">${t.amount.toLocaleString()} د.ع</td>
+                ${isEditMode ? `<td style="text-align:center;"><button class="btn-edit-action" onclick="openEditModal('${idStr}')">تعديل 📝</button></td>` : ''}
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openEditModal(txId) {
+        const cust = customers.find(c => c.id === selectedCustomerId);
+        const tx = cust.transactions.find(t => t.id.toString() === txId.toString());
+
+        if (!tx) return;
+
+        document.getElementById('editTxId').value = txId;
+        document.getElementById('editTxDate').value = tx.date;
+        document.getElementById('editTxDesc').value = tx.desc;
+        document.getElementById('editTxAmount').value = tx.amount;
+        document.getElementById('modalError').style.display = 'none';
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEditedTransaction() {
+        const txId = document.getElementById('editTxId').value;
+        const newDate = document.getElementById('editTxDate').value.trim();
+        const newDesc = document.getElementById('editTxDesc').value.trim();
+        const newAmount = parseInt(document.getElementById('editTxAmount').value);
+
+        if (!newDate || !newDesc || isNaN(newAmount) || newAmount <= 0) {
+            alert('يرجى ملء جميع الحقول بصورة صحيحة.');
+            return;
+        }
+
+        const cust = customers.find(c => c.id === selectedCustomerId);
+        
+        let updatedTransactions = cust.transactions.map(t => {
+            if (t.id.toString() === txId.toString()) {
+                return { ...t, date: newDate, desc: newDesc, amount: newAmount };
+            }
+            return t;
+        });
+
+        let testBalance = 0;
+        for (let i = updatedTransactions.length - 1; i >= 0; i--) {
+            if (updatedTransactions[i].type === 'دين جديد') {
+                testBalance += updatedTransactions[i].amount;
+            } else if (updatedTransactions[i].type === 'تسديد نقدى') {
+                testBalance -= updatedTransactions[i].amount;
+            }
+        }
+
+        if (testBalance < 0) {
+            document.getElementById('modalError').style.display = 'block';
+            return;
+        }
+
+        const tx = cust.transactions.find(t => t.id.toString() === txId.toString());
+        tx.date = newDate;
+        tx.desc = newDesc;
+        tx.amount = newAmount;
+        cust.balance = testBalance;
+
+        saveToStorage();
+        closeModal();
+        selectCustomer(selectedCustomerId);
+    }
+
+    function openDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').style.display = 'flex';
+    }
+
+    function closeDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').style.display = 'none';
+    }
+
+    function executeDeleteTransaction() {
+        const txId = document.getElementById('editTxId').value;
+        const cust = customers.find(c => c.id === selectedCustomerId);
+
+        let updatedTransactions = cust.transactions.filter(t => t.id.toString() !== txId.toString());
+
+        let testBalance = 0;
+        for (let i = updatedTransactions.length - 1; i >= 0; i--) {
+            if (updatedTransactions[i].type === 'دين جديد') {
+                testBalance += updatedTransactions[i].amount;
+            } else if (updatedTransactions[i].type === 'تسديد نقدى') {
+                testBalance -= updatedTransactions[i].amount;
+            }
+        }
+
+        if (testBalance < 0) {
+            alert('خطأ: لا يمكن حذف هذه الحركة لأنها تجعل ميزان الحساب الكلي بالسالب!');
+            closeDeleteConfirmModal();
+            return;
+        }
+
+        cust.transactions = updatedTransactions;
+        cust.balance = testBalance;
+
+        saveToStorage();
+        closeDeleteConfirmModal();
+        closeModal();
+        selectCustomer(selectedCustomerId);
+    }
+
+    renderCustomers();
+</script>
+
+</body>
+</html>
